@@ -4,13 +4,11 @@ module Utils
       @@instance ||= GithubResolver.new(url: 'https://api.github.com/graphql')
     end
 
-    def self.another_instance
-      @@another_instance ||= GithubResolver.new(url: 'https://api.github.com/graphql')
-    end
+    def resolve_remote_field(obj:, ctx:, current_result:)
+      headers['Authorization'] = "Bearer #{ctx[:github_key]}"
+      headers['User-Agent'] = 'Ruby'
 
-    def resolve_remote_field(_query, context)
-      headers["Authorization"] = "Bearer #{context[:github_key]}"
-      headers["User-Agent"] = 'Ruby'
+      current_result
     end
   end
 end

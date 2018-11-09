@@ -10,7 +10,7 @@ module GraphQL
           @headers = headers || {}
         end
 
-        def headers(context)
+        def headers(_context)
           @headers
         end
       end

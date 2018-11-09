@@ -20,13 +20,13 @@ module GraphQL
         raise response.errors[:data].join(', ') if response.errors.any?
 
         response.data
-      rescue => e
-        raise RemoteQueryExecutionError.new <<-ERR
-Cannot execute query #{raw_graphql}; 
-url: #{url};
-headers: #{headers};
-error: #{e.message}
-ERR
+      rescue StandardError => e
+        raise RemoteQueryExecutionError, <<-ERR
+          Cannot execute query #{raw_graphql};
+          url: #{url};
+          headers: #{headers};
+          error: #{e.message}
+        ERR
       end
 
       private

@@ -1,5 +1,6 @@
 module GraphQL
   module RemoteFields
+    # QueryBuilder build graphql query for some part of schema
     class QueryBuilder
       attr_reader :context
 
@@ -13,11 +14,11 @@ module GraphQL
 
         context_query = context.ast_node.to_query_string
 
-        <<-QUERY
-  query (#{variables_definitions}) {
-    #{context_query}
-  }
-        QUERY
+        <<-GRAPHQL
+          query (#{variables_definitions}) {
+            #{context_query}
+          }
+        GRAPHQL
       end
 
       def expose_args(args)

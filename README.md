@@ -20,8 +20,7 @@ Or install it yourself as:
 
 ## Usage
 
-At first include `GraphQL::RemoteFields` to query class inherited from `GraphQL::Schema::Object`.
-To fields' class defined inside this query class, `GraphQL::RemoteFields::Field::Mixin` will prepended.
+Use GraphQL::RemoteFields as a plugin on your schema.
 Remote queries will sent in parallel due to lazy mechanism of Ruby GraphQL.
 
 **Field options:**
@@ -58,11 +57,6 @@ Full example:
 module GraphqlAPI
   module Types
     class BaseObject < GraphQL::Schema::Object
-      # including mixin
-      include GraphQL::RemoteFields
-
-      # Default resolver instance
-      remote_resolver GithubResolver.new(url: "https://api.github.com/graphql")
     end
     
     class Post < BaseObject
@@ -90,20 +84,16 @@ module GraphqlAPI
             Types::GithubUser,
             null: false,
             remote: true,  # only fields with remote: true will resolved remotely
-            remote_resolver: :github_resolver do # set custom resolver instead of default
+            remote_resolver: GithubResolver.instance do # set custom resolver instead of default
         argument :login, String, required: true
       end
       
       field :repository,
             Types::GithubRepo, null: false,
             remote: true,
-            remote_resolver: :github_resolver do # set custom resolver using symbol name of defined method
+            remote_resolver: GithubResolver.instance do
         argument :owner, String, required: true
         argument :name, String, required: true
-      end
-
-      def github_resolver
-        @github_resolver ||= GithubResolver.new(url: 'https://api.github.com/graphql')
       end
     end
 
@@ -129,6 +119,8 @@ module GraphqlAPI
     end
 
     class Schema < GraphQL::Schema
+      use GraphQL::RemoteFields, remote_resolver: GithubResolver.new(url: "https://api.github.com/graphql")
+    
       query Query
     end
   end
@@ -136,10 +128,12 @@ end
 
 # Define custom remote resolver class
 # You can setup headers in overriden #resolve_remote_field using query and context
+# Also you need return back (modified or not) current_result 
 class GithubResolver < GraphQL::RemoteFields::Resolvers::Base
-  def resolve_remote_field(_query, context)
-    headers["Authorization"] = "Bearer #{context['github_key']}"
+  def resolve_remote_field(obj:, ctx:, current_result:)
+    headers["Authorization"] = "Bearer #{ctx['github_key']}"
     headers["User-Agent"] = 'Ruby'
+    current_result
   end
 end
 
@@ -170,7 +164,7 @@ variables = {
 context = {
     'github_key' => 'token'
 }
-result = GraphqlAPI::Types::Schema.execute(short_query_string, variables: variables, context: context)
+result = GraphqlAPI::Types::Schema.execute(query_string, variables: variables, context: context)
 
 => #<GraphQL::Query::Result @query=... @to_h={"data"=>{"posts"=>[{"id"=>"1", "title"=>"title"}], "remoteResults"=>{"user"=>{"id"=>"id=", "login"=>"alukyanov", "name"=>nil, "avatarUrl"=>"https://avatars1.githubusercontent.com/u/5574786?v=4", "bio"=>nil, "bioHTML"=>"", "location"=>nil}, "repository"=>{"id"=>"id=", "name"=>"worker"}}}}>
 ```

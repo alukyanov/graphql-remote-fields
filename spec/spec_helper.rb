@@ -1,13 +1,12 @@
 require 'bundler/setup'
 
+require 'webmock/rspec'
 require 'pry-byebug'
 require 'graphql/remote_fields'
 
 require_relative 'utils'
 require_relative 'utils/github_resolver'
-require_relative 'schemas/full_schema'
-require_relative 'schemas/no_remote_schema'
-require_relative 'schemas/remote_query_schema'
+require_relative 'support/schemas/local_schema'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -19,4 +18,9 @@ RSpec.configure do |config|
   config.expect_with :rspec do |c|
     c.syntax = :expect
   end
+end
+
+
+Dir[File.join(File.dirname(__FILE__), 'support', '**/*.rb')].each do |file|
+  require file
 end
