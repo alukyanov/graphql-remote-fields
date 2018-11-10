@@ -55,7 +55,7 @@ module GraphQL
       end
 
       def schema
-        schemas[request.hash] ||= GraphQL::Client.load_schema(http_client)
+        schemas[request.common_hash] ||= GraphQL::Client.load_schema(http_client)
       end
 
       def http_client

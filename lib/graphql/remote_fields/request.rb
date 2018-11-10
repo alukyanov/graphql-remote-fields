@@ -9,8 +9,8 @@ module GraphQL
       keyword_init: true
     ) do
 
-      def hash
-        @hash ||= [endpoint, headers].hash
+      def common_hash
+        @common_hash ||= [endpoint, headers].hash
       end
     end
   end

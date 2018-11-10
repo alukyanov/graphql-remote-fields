@@ -5,9 +5,8 @@ module Utils
     end
 
     def resolve_remote_field(obj:, ctx:, request:)
-      headers['Authorization'] = "Bearer #{ctx[:github_key]}"
-      headers['User-Agent'] = 'Ruby'
-
+      request.headers['Authorization'] = "Bearer #{ctx[:github_key]}"
+      request.headers['User-Agent'] = 'Ruby'
       request
     end
   end
