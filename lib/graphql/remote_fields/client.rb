@@ -1,51 +1,69 @@
-require 'graphql/remote_fields/client/http_client'
-
 module GraphQL
   module RemoteFields
     # Wrapper on the GraphQL::Client
     class Client
-      attr_reader :url, :headers
+      # Wrapper on GraphQL::Client::HTTP
+      # to send headers in constructor
+      class HttpClient < ::GraphQL::Client::HTTP
+        def initialize(uri, headers)
+          super(uri)
+          @headers = headers || {}
+        end
 
-      def initialize(url, headers)
-        @url = url
-        @headers = headers
+        def headers(_context)
+          @headers
+        end
       end
 
-      # Executes raw GraphQL query by GraphQL::Client
-      # @param raw_graphql [String] query will sent to server
-      # @param variables [Hash] with defined variables in this Hash
-      def execute(raw_graphql, variables = {})
-        query = client.parse(raw_graphql)
-        response = client.query(query, variables)
+      attr_reader :request
+
+      def self.execute(request)
+        new(request).execute
+      end
+
+      def self.schemas
+        @schemas ||= {}
+      end
+
+      def initialize(request)
+        @request = request
+      end
+
+      def execute
+        client = graphql_client
+        query = client.parse(request.query)
+        response = client.query(query, variables: request.vars)
+
         raise response.errors[:data].join(', ') if response.errors.any?
 
-        response.data
+        response.data.send(request.root_node)
       rescue StandardError => e
         raise RemoteQueryExecutionError, <<-ERR
-          Cannot execute query #{raw_graphql};
-          url: #{url};
-          headers: #{headers};
+          Cannot execute query #{request.query};
+          url: #{request.endpoint};
+          headers: #{request.headers};
           error: #{e.message}
         ERR
       end
 
       private
 
-      def client
-        @client ||= begin
-          GraphQL::Client.new(schema: load_schema, execute: http_client).tap do |client|
-            client.allow_dynamic_queries = true
-          end
+      def graphql_client
+        GraphQL::Client.new(schema: schema, execute: http_client).tap do |client|
+          client.allow_dynamic_queries = true
         end
       end
 
-      # TODO: cache schema into file dumps based on resolver
-      def load_schema
-        GraphQL::Client.load_schema(http_client)
+      def schema
+        schemas[request.hash] ||= GraphQL::Client.load_schema(http_client)
       end
 
       def http_client
-        @http_client ||= HttpClient.new(url, headers)
+        @http_client ||= HttpClient.new(request.endpoint, request.headers)
+      end
+
+      def schemas
+        self.class.schemas
       end
     end
   end

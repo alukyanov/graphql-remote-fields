@@ -19,7 +19,7 @@ module GraphQL
         field.redefine do
           resolve ->(obj, args, ctx) {
             Concurrent::Future.execute do
-              resolver.resolve(obj, args, ctx, field.metadata[:remote_query])
+              resolver.resolve(obj, args, ctx, field.metadata)
             end
           }
         end

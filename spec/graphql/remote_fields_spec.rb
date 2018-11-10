@@ -96,7 +96,7 @@ RSpec.describe GraphQL::RemoteFields do
       end)
 
     allow(GraphQL::Client).to receive(:dump_schema).and_return(introspection_schema)
-    allow(GraphQL::RemoteFields::Client).to receive(:load_schema)
+    allow(GraphQL::Client).to receive(:load_schema)
       .and_return(introspection_schema)
 
     allow(Concurrent::Future).to receive(:execute) do |&block|

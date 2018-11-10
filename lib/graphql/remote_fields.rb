@@ -43,8 +43,10 @@ end
 GraphQL::RemoteFields.accept_definitions
 
 require 'graphql/client'
+require 'graphql/client/http'
 require 'graphql/remote_fields/version'
 require 'graphql/remote_fields/plugin'
 require 'graphql/remote_fields/client'
+require 'graphql/remote_fields/request'
 require 'graphql/remote_fields/query_builder'
 require 'graphql/remote_fields/resolvers/base'
