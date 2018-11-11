@@ -33,20 +33,21 @@ field :user,
     Types::GithubUser,
     null: false,
     remote: true,  # only fields with remote: true will resolved remotely
-    remote_resolver: :github_resolver, # custom resolver
+    remote_resolver: GithubResolver.instance, # custom resolver
     remote_query: -> (obj, ctx) { "query { user { id } }" } # override query to server
 ```
 
 **Custom remote resolver**
 
-You can override resolve_remote_field to set up headers using context.
+You can override resolve_remote_field to set up request (headers etc.) using context.
 Example:
 
 ```ruby
 class GithubResolver < GraphQL::RemoteFields::Resolvers::Base
-  def resolve_remote_field(_query, context)
-    headers["Authorization"] = "Bearer #{context['github_key']}"
-    headers["User-Agent"] = 'Ruby'
+  def resolve_remote_field(obj:, ctx:, request:)
+    request.headers['Authorization'] = "Bearer #{ctx[:github_key]}"
+    request.headers['User-Agent'] = 'Ruby'
+    request
   end
 end
 ```
@@ -128,12 +129,12 @@ end
 
 # Define custom remote resolver class
 # You can setup headers in overriden #resolve_remote_field using query and context
-# Also you need return back (modified or not) current_result 
+# Also you need return back (modified or not) request 
 class GithubResolver < GraphQL::RemoteFields::Resolvers::Base
-  def resolve_remote_field(obj:, ctx:, current_result:)
-    headers["Authorization"] = "Bearer #{ctx['github_key']}"
-    headers["User-Agent"] = 'Ruby'
-    current_result
+  def resolve_remote_field(obj:, ctx:, request:)
+    request.headers['Authorization'] = "Bearer #{ctx[:github_key]}"
+    request.headers['User-Agent'] = 'Ruby'
+    request
   end
 end
 

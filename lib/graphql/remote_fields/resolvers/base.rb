@@ -32,10 +32,8 @@ module GraphQL
           request
         end
 
-        private
-
         def build_request(obj, args, ctx, metadata)
-          query_builder = QueryBuilder.new(ctx)
+          query_builder = QueryBuilder.new(ctx.query, ctx.ast_node)
 
           query = remote_query_from_metadata(metadata, obj, ctx) ||
                   query_builder.build
@@ -49,6 +47,8 @@ module GraphQL
             vars:       vars,
             root_node:  ctx.ast_node.name)
         end
+
+        private
 
         def remote_query_from_metadata(metadata, obj, ctx)
           return unless metadata[:remote_query]

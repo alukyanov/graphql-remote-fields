@@ -2,8 +2,8 @@ RSpec.describe GraphQL::RemoteFields do
   context 'local schema' do
     let(:query) do
       <<-'GRAPHQL'
-        query {
-          posts {
+        query ($owner: String!) {
+          posts(login: $owner) {
             id
             title
           }
@@ -13,7 +13,7 @@ RSpec.describe GraphQL::RemoteFields do
 
     it 'resolves as usual' do
       expect(WebMock).not_to have_requested(:post, github_url)
-      resp = LocalSchema.execute(query)
+      resp = LocalSchema.execute(query, variables: { owner: 'alukyanov' })
       expect(resp['data'].keys).to include 'posts'
       expect(resp['data']['posts'][0]['id']).to eq '1'
       expect(resp['data']['posts'][0]['title']).to eq 'title'
@@ -45,6 +45,7 @@ RSpec.describe GraphQL::RemoteFields do
       expect(resp['data']['user']['id']).to eq user_id
       expect(resp['data']['user']['login']).to eq user_login
       expect(resp['data']['repository']['id']).to eq repo_id
+      expect(resp['data']['repository']['name']).to eq repo_name
       expect(resp['data']['repository']['name']).to eq repo_name
     end
   end

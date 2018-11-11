@@ -2,67 +2,50 @@ module GraphQL
   module RemoteFields
     # QueryBuilder build graphql query for some part of schema
     class QueryBuilder
-      attr_reader :context
+      attr_reader :query, :ast_node
 
-      def initialize(context)
-        @context = context
+      def initialize(query, ast_node)
+        @query    = query
+        @ast_node = ast_node
       end
 
       def build
-        variables_definitions = variable_definitions_for_context
-                                .map(&:to_query_string).join(', ')
-
-        context_query = context.ast_node.to_query_string
-
         <<-GRAPHQL
-          query (#{variables_definitions}) {
-            #{context_query}
+          query #{node_variables} {
+            #{node_query}
           }
         GRAPHQL
       end
 
       def expose_args(args)
-        context_args.each_with_object({}) do |arg, result|
+        node_arguments.each_with_object({}) do |arg, result|
           result[arg.value.name] = args[arg.name]
         end
       end
 
       private
 
-      def variable_definitions_for_context
-        @variable_definitions_for_context ||= begin
-          definition_for_context.variables.select do |var|
-            context_args_value_names.include?(var.name)
-          end
-        end
+      def node_query
+        ast_node.to_query_string
       end
 
-      def context_args_value_names
-        @context_args_value_names ||= context_args.map do |arg|
-          arg.value.name
+      def node_variables
+        arg_definitions = node_arguments.map { |arg| arg.value.name }
+        node_variables = query_variables.select do |var|
+          arg_definitions.include?(var.name)
         end
+
+        return if node_variables.empty?
+
+        "(#{node_variables.map(&:to_query_string).join(',')})"
       end
 
-      def context_args
-        @context_args ||= context.ast_node.arguments
+      def query_variables
+        @query_variables ||= query.instance_variable_get(:@ast_variables)
       end
 
-      def definition_for_context
-        context.query.document.definitions.find do |definition|
-          definition.selections.find do |selection|
-            found_selection = find_selection(selection, context.ast_node)
-            break found_selection if found_selection
-          end
-        end
-      end
-
-      def find_selection(selection_node, target_selection)
-        return unless selection_node
-        return selection_node if selection_node == target_selection
-
-        selection_node.selections.find do |internal_selection|
-          find_selection(internal_selection, target_selection)
-        end
+      def node_arguments
+        @node_arguments ||= ast_node.arguments
       end
     end
   end
